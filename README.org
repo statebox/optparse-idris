@@ -1,0 +1,5 @@
+#+TITLE: Optparse-Applicative
+#+AUTHOR: Huw Campbell
+#+DATE: [2016-02-22 Mon]
+
+A mostly faithful port of optparse-applicative for Haskell by Paolo Capriotti.
