@@ -9,9 +9,13 @@ import Options.Applicative.Maybe
 import Control.Monad.State
 import Control.Monad.Trans
 
-parseWord : String -> Maybe String
+data OptWord : Type where
+  ParsedWord :  OptName -> Maybe String -> OptWord
+
+parseWord : String -> Maybe OptName
 parseWord s = case unpack s of
-  ('-' :: '-' :: w) => Just (pack w)
+  ('-' :: '-' :: w) => Just (LongName (pack w))
+  ('-' :: w :: rs)  => Just (ShortName w)
   _                 => Nothing
 
 searchParser : {a : Type} -> Parser a -> ({r : Type} -> Option r -> MaybeT (StateT (List String) (Either ParseError)) r) -> MaybeT (StateT (List String) (Either ParseError)) (Parser a)
@@ -30,10 +34,10 @@ stepParser p arg = case (parseWord arg) of
     Opt (ArgReader fa) => lift $ lift (fa arg)
     _                  => empty
   Just w  => searchParser p $ \opt => case opt of
-    Opt (FlagReader w' a)    => case w == w' of
+    Opt (FlagReader w' a)    => case elem w w' of
       True  => lift $ lift (Right a)
       False => empty
-    Opt (OptionReader w' fa) => case w == w' of
+    Opt (OptionReader w' fa) => case elem w w' of
       True  => do
         args <- lift $ ST (\x => return (x, x))
         case args of
