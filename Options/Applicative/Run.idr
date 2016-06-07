@@ -9,6 +9,8 @@ import Options.Applicative.Maybe
 import Control.Monad.State
 import Control.Monad.Trans
 
+%access public export
+
 data OptWord : Type where
   ParsedWord :  OptName -> Maybe String -> OptWord
 

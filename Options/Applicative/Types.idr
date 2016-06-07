@@ -5,11 +5,14 @@
 module Options.Applicative.Types
 import Control.Monad.Trans
 
+%default total
+%access public export
+
 data OptName : Type where
   ShortName : Char   -> OptName
   LongName  : String -> OptName
 
-instance Eq OptName where
+Eq OptName where
   (==) (ShortName a) (ShortName b) = a == b
   (==) (LongName  a) (LongName  b) = a == b
   _  == _ = False
@@ -22,7 +25,7 @@ data OptReader : a -> Type where
   FlagReader   : List OptName -> a                               -> OptReader a
   ArgReader    :                 (String -> Either ParseError a) -> OptReader a
 
-instance Functor OptReader where
+Functor OptReader where
   map f (OptionReader n p) = OptionReader n (map f . p)
   map f (FlagReader n d)   = FlagReader n (f d)
   map f (ArgReader p)      = ArgReader (map f . p)
@@ -30,7 +33,7 @@ instance Functor OptReader where
 data Option : a -> Type where
   Opt : OptReader a -> Option a
 
-instance Functor Option where
+Functor Option where
   map f (Opt rdr) = Opt (map f rdr)
 
 data Parser : (a : Type) -> Type where
@@ -39,17 +42,17 @@ data Parser : (a : Type) -> Type where
   AppP : Parser (x -> a) -> Parser x -> Parser a
   AltP : Parser a -> Parser a -> Parser a
 
-instance Functor Parser where
+Functor Parser where
   map f (NilP x) = NilP (map f x)
   map f (OptP x) = OptP (map f x)
   map f (AppP ff a) = AppP (map (f .) ff) a
   map f (AltP a b) = AltP (map f a) (map f b)
 
-instance Applicative Parser where
+Applicative Parser where
   pure  = NilP . Just
   (<*>) = AppP
 
-instance Alternative Parser where
+Alternative Parser where
   empty = NilP Nothing
   (<|>) = AltP
 

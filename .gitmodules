@@ -1,0 +1,3 @@
+[submodule "lib/idris-lens"]
+	path = lib/idris-lens
+	url = git@github.com:HuwCampbell/idris-lens.git

@@ -4,8 +4,6 @@
 -- --------------------------------------------------------------------- [ EOH ]
 module Options.Applicative.Usage
 
-import public Text.PrettyPrint.Leijen
-
 import Options.Applicative.Types
 import Options.Applicative.Maybe
 import Control.Monad.State
