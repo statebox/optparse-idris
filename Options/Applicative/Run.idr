@@ -20,7 +20,7 @@ parseWord s = case unpack s of
   ('-' :: w :: rs)  => Just (ShortName w)
   _                 => Nothing
 
-searchParser : {a : Type} -> Parser a -> ({r : Type} -> Option r -> MaybeT (StateT (List String) (Either ParseError)) r) -> MaybeT (StateT (List String) (Either ParseError)) (Parser a)
+searchParser : {a : Type} -> Parser a -> ({g : ParamType} -> {r : Type} -> Option g r -> MaybeT (StateT (List String) (Either ParseError)) r) -> MaybeT (StateT (List String) (Either ParseError)) (Parser a)
 searchParser (NilP x) _ = empty
 searchParser (OptP o) f = map (NilP . Just) (f o)
 searchParser (AppP p1 p2) f = (<|>)
@@ -33,13 +33,13 @@ searchParser (AltP p1 p2) f = (<|>)
 stepParser : {a : Type} -> Parser a -> String -> MaybeT (StateT (List String) (Either ParseError)) (Parser a)
 stepParser p arg = case (parseWord arg) of
   Nothing => searchParser p $ \opt => case opt of
-    Opt (ArgReader fa) => lift $ lift (fa arg)
-    _                  => empty
+    Opt _ (ArgReader fa _) => lift $ lift (fa arg)
+    _                      => empty
   Just w  => searchParser p $ \opt => case opt of
-    Opt (FlagReader w' a)    => case elem w w' of
+    Opt _ (FlagReader w' a)    => case elem w w' of
       True  => lift $ lift (Right a)
       False => empty
-    Opt (OptionReader w' fa) => case elem w w' of
+    Opt _ (OptionReader w' fa _) => case elem w w' of
       True  => do
         args <- lift $ ST (\x => return (x, x))
         case args of
