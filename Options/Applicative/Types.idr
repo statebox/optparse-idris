@@ -15,7 +15,17 @@ data ParamType = OptionParams
                | FlagParams
                | ArgParams
 
-data OptProperties = MkOptProperties Bool Doc
+data Visibility = Visible
+                | Hidden
+                | Internal
+
+Eq Visibility where
+  (==) Visible Visible   = True
+  (==) Hidden Hidden     = True
+  (==) Internal Internal = True
+  (==) _ _               = False
+
+data OptProperties = MkOptProperties Visibility Doc
 
 data OptName : Type where
   ShortName : Char   -> OptName

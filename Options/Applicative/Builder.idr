@@ -9,7 +9,8 @@ import        Options.Applicative.Types
 import        Control.Monad.Trans
 import        Control.Lens
 
-%default total
+import        Prelude.List as PL
+
 %access public export
 
 optRdr : Lens' (Option x a) (OptReader x a)
@@ -60,19 +61,55 @@ HasName (OptReader FlagParams a) where
 HasName (Option FlagParams a) where
   names = optRdr . names
 
+short : HasName d => Char -> d -> d
+short c = over names (\ns => ShortName c :: ns)
+
+long : HasName d => String -> d -> d
+long c = over names (\ns => LongName c :: ns)
+
 interface HasHelp d where
   help : { f : Type -> Type } -> Functor f => LensLike' f d Doc
 
 HasHelp OptProperties where
   help (MkArrow f) = MkArrow (\a => case a of
          (MkOptProperties vis hdoc) => MkOptProperties vis <$> f hdoc
-        )
+       )
 
 HasHelp (Option x a) where
   help = optProps . help
 
+interface HasVisibility d where
+  visibility : { f : Type -> Type } -> Functor f => LensLike' f d Visibility
+
+HasVisibility OptProperties where
+  visibility (MkArrow f) = MkArrow (\a => case a of
+         (MkOptProperties vis hdoc) => (\vis' => MkOptProperties vis' hdoc) <$> f vis
+        )
+
+HasVisibility (Option x a) where
+  visibility = optProps . visibility
+
+hide : HasVisibility d => d -> d
+hide d = d & visibility .~ Hidden
+
+internal : HasVisibility d => d -> d
+internal d = d & visibility .~ Internal
+
+interface HasValue ( d : Type -> Type ) where
+  value : { a : Type } -> { b : Type } -> { f : Type -> Type } -> Functor f => LensLike f (d a) (d b) a b
+
+HasValue (OptReader FlagParams) where
+  value (MkArrow f) = MkArrow (\a => case a of
+         (FlagReader n d) => (\d' => FlagReader n d') <$> f d
+        )
+
+HasValue (Option FlagParams) where
+  value (MkArrow f) = MkArrow (\a => case a of
+         (Opt props (FlagReader n d)) => (\d' => Opt props $ FlagReader n d') <$> f d
+        )
+
 defProps : OptProperties
-defProps = MkOptProperties True Empty
+defProps = MkOptProperties Visible Empty
 
 option : (String -> Either ParseError a) -> (Option OptionParams a -> Option OptionParams a) -> Parser a
 option rdr f = OptP  (f $ Opt defProps (OptionReader [] rdr "OPT"))
