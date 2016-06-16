@@ -11,8 +11,18 @@ import public Text.PrettyPrint.Leijen
 
 data Chunk a = MkChunk (Maybe a)
 
-instance Functor Chunk where
+unChunk : Chunk a -> Maybe a
+unChunk (MkChunk a) = a
+
+Functor Chunk where
   map f (MkChunk x) = MkChunk $ map f x
+
+Applicative Chunk where
+  pure = MkChunk . pure
+  (MkChunk f) <*> (MkChunk x) = MkChunk (f <*> x)
+
+Monad Chunk where
+  (MkChunk m) >>= f = MkChunk $ m >>= unChunk . f
 
 chunked : (a -> a -> a)
         -> Chunk a -> Chunk a -> Chunk a
@@ -29,5 +39,16 @@ extractChunk (MkChunk x) = fromMaybe neutral x
 isEmptyChunk : Chunk a -> Bool
 isEmptyChunk (MkChunk Nothing)  = True
 isEmptyChunk (MkChunk (Just _)) = False
+
+
+tabulate' : Int -> List (Doc, Doc) -> Chunk Doc
+tabulate' _ [] = MkChunk Nothing
+tabulate' size table = pure $ vcat
+  [ indent 2 (fillBreak size key |+| value)
+  | (key, value) <- table ]
+
+-- | Display pairs of strings in a table.
+tabulate : List (Doc, Doc) -> Chunk Doc
+tabulate = tabulate' 24
 
 -- --------------------------------------------------------------------- [ EOF ]

@@ -14,10 +14,13 @@ import Control.Monad.Trans
 data OptWord : Type where
   ParsedWord :  OptName -> Maybe String -> OptWord
 
-parseWord : String -> Maybe OptName
+parseWord : String -> Maybe OptWord
 parseWord s = case unpack s of
-  ('-' :: '-' :: w) => Just (LongName (pack w))
-  ('-' :: w :: rs)  => Just (ShortName w)
+  ('-' :: '-' :: w) => Just $ case span (/= '=') w of
+        (_, [])         => ParsedWord (LongName . pack $ w) Nothing
+        (w', _ :: rest) => ParsedWord (LongName . pack $ w') $ Just . pack $ rest
+  ('-' :: w :: [])  => Just $ ParsedWord (ShortName w) Nothing
+  ('-' :: w :: rs)  => Just $ ParsedWord (ShortName w) $ Just (pack rs)
   _                 => Nothing
 
 searchParser : {a : Type} -> Parser a -> ({g : ParamType} -> {r : Type} -> Option g r -> MaybeT (StateT (List String) (Either ParseError)) r) -> MaybeT (StateT (List String) (Either ParseError)) (Parser a)
@@ -35,14 +38,19 @@ stepParser p arg = case (parseWord arg) of
   Nothing => searchParser p $ \opt => case opt of
     Opt _ (ArgReader fa _) => lift $ lift (fa arg)
     _                      => empty
-  Just w  => searchParser p $ \opt => case opt of
+  Just (ParsedWord w wordVal) => searchParser p $ \opt => case opt of
     Opt _ (FlagReader w' a)    => case elem w w' of
-      True  => lift $ lift (Right a)
+      True  => do
+        args <- lift $ ST (\x => return (x, x))
+        let poppedArgs  = maybe [] (\w => ("-" <+> w) :: Nil) wordVal <+> args
+        lift $ ST (\y => return ((), poppedArgs))
+        lift $ lift (Right a)
       False => empty
     Opt _ (OptionReader w' fa _) => case elem w w' of
       True  => do
         args <- lift $ ST (\x => return (x, x))
-        case args of
+        let argsWord = maybe [] (:: Nil) wordVal <+> args
+        case argsWord of
           (a :: rest) => do
             lift $ ST (\y => return ((), rest))
             lift $ lift (fa a)

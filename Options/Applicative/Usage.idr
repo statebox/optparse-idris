@@ -35,9 +35,9 @@ renderNames (Nil)      = Empty
 renderNames (n :: Nil) = renderName n
 renderNames (n :: ns)  = (foldl (\x => \y => x |++| char '|' |++| renderName y) (renderName n) ns)
 
-optDesc : OptHelpInfo -> Option g a -> Chunk Doc
-optDesc info (Opt pp rdr) =
-  render mm (pp ^. visibility == Visible) (hinfoDefault info) withParens
+optDesc : Bool -> Bool -> OptHelpInfo -> Option g a -> Chunk Doc
+optDesc withHidden withParens info (Opt pp rdr) =
+  render mm (pp ^. visibility == Visible || withHidden) (hinfoDefault info) (reqParens && withParens)
     where
       mm : Chunk Doc
       mm = MkChunk . Just $ case rdr of
@@ -45,13 +45,13 @@ optDesc info (Opt pp rdr) =
         (FlagReader ns _)     => renderNames ns
         (ArgReader _ m)       => string m
 
-      withParens : Bool
-      withParens = case rdr of
-        (OptionReader (_ :: _) _ _) => True
-        (OptionReader _ _ _)        => False
-        (FlagReader (_ :: _) _)     => True
-        (FlagReader _ _)            => False
-        (ArgReader _ _)             => False
+      reqParens : Bool
+      reqParens = case rdr of
+        (OptionReader (_ :: _) _ _)  => True
+        (OptionReader _ _ _)         => False
+        (FlagReader (_ :: _ :: _) _) => True
+        (FlagReader _ _)             => False
+        (ArgReader _ _)              => False
 
       render : Chunk Doc -> Bool -> Bool -> Bool -> Chunk Doc
       render _      False  _ _ = MkChunk Nothing
@@ -109,5 +109,28 @@ treeMapParser g = simplify . go False False g
     go m d f (AltP p1 p2) = AltNode  [go m d' f p1, go m d' f p2]
       where d' = d || has_default p1 || has_default p2
 
+flattenTree : OptTree a -> List a
+flattenTree (Leaf x) = [x]
+flattenTree (MultNode xs) = xs >>= flattenTree
+flattenTree (AltNode xs) = xs >>= flattenTree
+
 briefDesc : Parser a -> Chunk Doc
-briefDesc = fold_tree . treeMapParser optDesc
+briefDesc = fold_tree . treeMapParser (optDesc False True)
+
+fullDesc : Parser a -> Chunk Doc
+fullDesc = tabulate . catMaybes . flattenTree . treeMapParser doc
+  where
+    doc : OptHelpInfo -> Option g a -> Maybe (Doc, Doc)
+    doc info opt = do
+      let n = optDesc True False info opt
+      let h = opt ^. help
+      guard . not . isEmptyChunk $ n
+      return (extractChunk n, h)
+
+-- | Generate the help text for a program.
+parserHelp : Parser a -> Doc
+parserHelp p =
+  text "Usage:" |++| extractChunk (briefDesc p) |/| with_title "Available options:" (fullDesc p)
+  where
+    with_title : String -> Chunk Doc -> Doc
+    with_title title ch = (text title |/| extractChunk ch)
