@@ -31,16 +31,19 @@ HasMeta (OptReader OptionParams a) where
           (OptionReader n p m) => (OptionReader n p) <$> f m
         )
 
-HasMeta (Option OptionParams a) where
-  meta = optRdr . meta
-
 HasMeta (OptReader ArgParams a) where
   meta (MkArrow f) = MkArrow (\a => case a of
           (ArgReader p m) => (ArgReader p) <$> f m
         )
 
-HasMeta (Option ArgParams a) where
+HasMeta (OptReader CmdParams a) where
+  meta (MkArrow f) = MkArrow (\a => case a of
+          (CmdReader ps m) => (CmdReader ps) <$> f m
+        )
+
+HasMeta (OptReader x a) => HasMeta (Option x a) where
   meta = optRdr . meta
+
 
 interface HasName d where
   names : { f : Type -> Type } -> Functor f => LensLike' f d (List OptName)
@@ -50,15 +53,12 @@ HasName (OptReader OptionParams a) where
          (OptionReader n p m) => (\n' => OptionReader n' p m) <$> (f n)
         )
 
-HasName (Option OptionParams a) where
-  names = optRdr . names
-
 HasName (OptReader FlagParams a) where
   names (MkArrow f) = MkArrow (\a => case a of
          (FlagReader n d) => (\n' => FlagReader n' d) <$> f n
         )
 
-HasName (Option FlagParams a) where
+HasName (OptReader x a) => HasName (Option x a) where
   names = optRdr . names
 
 short : HasName d => Char -> d -> d
@@ -66,6 +66,20 @@ short c = over names (\ns => ShortName c :: ns)
 
 long : HasName d => String -> d -> d
 long c = over names (\ns => LongName c :: ns)
+
+interface HasSubCommands (d : Type ) a where
+  cmds : { f : Type -> Type } -> Functor f => LensLike' f d (List (String, (Parser a)))
+
+HasSubCommands (OptReader CmdParams a) a where
+  cmds (MkArrow f) = MkArrow (\a => case a of
+          (CmdReader ps m) => flip CmdReader m <$> f ps
+        )
+
+HasSubCommands (Option CmdParams a) a where
+  cmds = optRdr . cmds
+
+cmd : HasSubCommands d a => String -> Parser a -> d -> d
+cmd n p = over cmds (\ns => (n,p) :: ns)
 
 interface HasHelp d where
   help : { f : Type -> Type } -> Functor f => LensLike' f d Doc
@@ -125,5 +139,8 @@ strArg = arg Right
 
 flag : (Option FlagParams Bool -> Option FlagParams a) -> Parser a
 flag f = OptP (f $ Opt defProps (FlagReader [] True))
+
+subparser : (Option CmdParams a -> Option CmdParams a) -> Parser a
+subparser f = OptP (f $ Opt defProps (CmdReader [] "COMMAND"))
 
 -- --------------------------------------------------------------------- [ EOF ]

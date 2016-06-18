@@ -8,12 +8,12 @@ import public Text.PrettyPrint.Leijen
 import        Control.Monad.Trans
 import        Control.Lens
 
-%default total
 %access public export
 
 data ParamType = OptionParams
                | FlagParams
                | ArgParams
+               | CmdParams
 
 data Visibility = Visible
                 | Hidden
@@ -39,33 +39,36 @@ Eq OptName where
 data ParseError : Type where
   ErrorMsg : String -> ParseError
 
-data OptReader : ParamType -> a -> Type where
-  OptionReader : List OptName -> (String -> Either ParseError a) -> String -> OptReader OptionParams a
-  FlagReader   : List OptName -> a                                         -> OptReader FlagParams a
-  ArgReader    :                 (String -> Either ParseError a) -> String -> OptReader ArgParams a
+mutual
+  data OptReader : ParamType -> a -> Type where
+    OptionReader : List OptName -> (String -> Either ParseError a) -> String -> OptReader OptionParams a
+    FlagReader   : List OptName -> a                                         -> OptReader FlagParams a
+    ArgReader    :                 (String -> Either ParseError a) -> String -> OptReader ArgParams a
+    CmdReader    : List (String, Parser a)                         -> String -> OptReader CmdParams a
 
-Functor (OptReader ps) where
-  map f (OptionReader n p m) = OptionReader n (map f . p) m
-  map f (FlagReader n d)     = FlagReader n (f d)
-  map f (ArgReader p m)      = ArgReader (map f . p) m
+  Functor (OptReader ps) where
+    map f (OptionReader n p m) = OptionReader n (map f . p) m
+    map f (FlagReader n d)     = FlagReader n (f d)
+    map f (ArgReader p m)      = ArgReader (map f . p) m
+    map f (CmdReader ps m)     = assert_total $ CmdReader ((\(n,p) => (n, map f p)) <$> ps) m
 
-data Option : ParamType -> a -> Type where
-  Opt : OptProperties -> OptReader ps a -> Option ps a
+  data Option : ParamType -> a -> Type where
+    Opt : OptProperties -> OptReader ps a -> Option ps a
 
-Functor (Option ps) where
-  map f (Opt props rdr) = Opt props (map f rdr)
+  Functor (Option ps) where
+    map f (Opt props rdr) = Opt props (map f rdr)
 
-data Parser : (a : Type) -> Type where
-  NilP : Maybe a -> Parser a
-  OptP : Option ps a -> Parser a
-  AppP : Parser (x -> a) -> Parser x -> Parser a
-  AltP : Parser a -> Parser a -> Parser a
+  data Parser : (a : Type) -> Type where
+    NilP : Maybe a -> Parser a
+    OptP : Option ps a -> Parser a
+    AppP : Parser (x -> a) -> Parser x -> Parser a
+    AltP : Parser a -> Parser a -> Parser a
 
-Functor Parser where
-  map f (NilP x) = NilP (map f x)
-  map f (OptP x) = OptP (map f x)
-  map f (AppP ff a) = AppP (map (f .) ff) a
-  map f (AltP a b) = AltP (map f a) (map f b)
+  Functor Parser where
+    map f (NilP x) = NilP (map f x)
+    map f (OptP x) = OptP (map f x)
+    map f (AppP ff a) = AppP (map (f .) ff) a
+    map f (AltP a b) = AltP (map f a) (map f b)
 
 Applicative Parser where
   pure  = NilP . Just

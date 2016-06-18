@@ -44,6 +44,7 @@ optDesc withHidden withParens info (Opt pp rdr) =
         (OptionReader ns _ m) => renderNames ns |++| (string m)
         (FlagReader ns _)     => renderNames ns
         (ArgReader _ m)       => string m
+        (CmdReader _ m)       => string m
 
       reqParens : Bool
       reqParens = case rdr of
@@ -52,6 +53,7 @@ optDesc withHidden withParens info (Opt pp rdr) =
         (FlagReader (_ :: _ :: _) _) => True
         (FlagReader _ _)             => False
         (ArgReader _ _)              => False
+        (CmdReader _ _)              => False
 
       render : Chunk Doc -> Bool -> Bool -> Bool -> Chunk Doc
       render _      False  _ _ = MkChunk Nothing

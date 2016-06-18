@@ -23,9 +23,9 @@ parseWord s = case unpack s of
   ('-' :: w :: rs)  => Just $ ParsedWord (ShortName w) $ Just (pack rs)
   _                 => Nothing
 
-searchParser : {a : Type} -> Parser a -> ({g : ParamType} -> {r : Type} -> Option g r -> MaybeT (StateT (List String) (Either ParseError)) r) -> MaybeT (StateT (List String) (Either ParseError)) (Parser a)
+searchParser : {a : Type} -> Parser a -> ({g : ParamType} -> {r : Type} -> Option g r -> MaybeT (StateT (List String) (Either ParseError)) (Parser r)) -> MaybeT (StateT (List String) (Either ParseError)) (Parser a)
 searchParser (NilP x) _ = empty
-searchParser (OptP o) f = map (NilP . Just) (f o)
+searchParser (OptP o) f = f o
 searchParser (AppP p1 p2) f = (<|>)
   ( (\p1' => p1' <*> p2) <$> searchParser p1 f )
   ( (\p2' => p1 <*> p2') <$> searchParser p2 f )
@@ -36,7 +36,10 @@ searchParser (AltP p1 p2) f = (<|>)
 stepParser : {a : Type} -> Parser a -> String -> MaybeT (StateT (List String) (Either ParseError)) (Parser a)
 stepParser p arg = case (parseWord arg) of
   Nothing => searchParser p $ \opt => case opt of
-    Opt _ (ArgReader fa _) => lift $ lift (fa arg)
+    Opt _ (ArgReader fa _) => lift $ lift $ map pure (fa arg)
+    Opt _ (CmdReader ps _) => case lookup arg ps of
+      Just sub => pure sub
+      Nothing  => empty
     _                      => empty
   Just (ParsedWord w wordVal) => searchParser p $ \opt => case opt of
     Opt _ (FlagReader w' a)    => case elem w w' of
@@ -44,7 +47,7 @@ stepParser p arg = case (parseWord arg) of
         args <- lift $ ST (\x => return (x, x))
         let poppedArgs  = maybe [] (\w => ("-" <+> w) :: Nil) wordVal <+> args
         lift $ ST (\y => return ((), poppedArgs))
-        lift $ lift (Right a)
+        lift . lift . Right . pure $ a
       False => empty
     Opt _ (OptionReader w' fa _) => case elem w w' of
       True  => do
@@ -53,7 +56,7 @@ stepParser p arg = case (parseWord arg) of
         case argsWord of
           (a :: rest) => do
             lift $ ST (\y => return ((), rest))
-            lift $ lift (fa a)
+            lift . lift . map pure $ fa a
           _ => lift $ lift (Left $ ErrorMsg "Input required after option ")
       False => empty
     _ => empty
@@ -78,5 +81,12 @@ runParser p args@(arg :: argt) = do
   case x of
     (Just p', args') => runParser p' args'
     _                => maybeToEither (parseError arg) $ map (\x' => (x', args)) (evalParser p)
+
+runParserFully : Parser a -> List String -> Either ParseError a
+runParserFully p Nil = do
+  (res,leftOver) <- runParser p Nil
+  case leftOver of
+    (un :: _) => Left $ parseError un
+    Nil       => Right res
 
 -- --------------------------------------------------------------------- [ EOF ]
