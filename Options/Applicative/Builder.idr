@@ -14,12 +14,12 @@ import        Prelude.List as PL
 %access public export
 
 optRdr : Lens' (Option x a) (OptReader x a)
-optRdr (MkArrow f) = MkArrow (\a => case a of
+optRdr (Mor f) = Mor (\a => case a of
       (Opt props rdr) => (Opt props) <$> f rdr
     )
 
 optProps : Lens' (Option x a) (OptProperties)
-optProps (MkArrow f) = MkArrow (\a => case a of
+optProps (Mor f) = Mor (\a => case a of
       (Opt props rdr) => (flip Opt rdr) <$> f props
     )
 
@@ -27,17 +27,17 @@ interface HasMeta d where
   meta : { f : Type -> Type } -> Functor f => LensLike' f d String
 
 HasMeta (OptReader OptionParams a) where
-  meta (MkArrow f) = MkArrow (\a => case a of
+  meta (Mor f) = Mor (\a => case a of
           (OptionReader n p m) => (OptionReader n p) <$> f m
         )
 
 HasMeta (OptReader ArgParams a) where
-  meta (MkArrow f) = MkArrow (\a => case a of
+  meta (Mor f) = Mor (\a => case a of
           (ArgReader p m) => (ArgReader p) <$> f m
         )
 
 HasMeta (OptReader CmdParams a) where
-  meta (MkArrow f) = MkArrow (\a => case a of
+  meta (Mor f) = Mor (\a => case a of
           (CmdReader ps m) => (CmdReader ps) <$> f m
         )
 
@@ -49,12 +49,12 @@ interface HasName d where
   names : { f : Type -> Type } -> Functor f => LensLike' f d (List OptName)
 
 HasName (OptReader OptionParams a) where
-  names (MkArrow f) = MkArrow (\a => case a of
+  names (Mor f) = Mor (\a => case a of
          (OptionReader n p m) => (\n' => OptionReader n' p m) <$> (f n)
         )
 
 HasName (OptReader FlagParams a) where
-  names (MkArrow f) = MkArrow (\a => case a of
+  names (Mor f) = Mor (\a => case a of
          (FlagReader n d) => (\n' => FlagReader n' d) <$> f n
         )
 
@@ -71,7 +71,7 @@ interface HasSubCommands (d : Type ) a where
   cmds : { f : Type -> Type } -> Functor f => LensLike' f d (List (String, (Parser a)))
 
 HasSubCommands (OptReader CmdParams a) a where
-  cmds (MkArrow f) = MkArrow (\a => case a of
+  cmds (Mor f) = Mor (\a => case a of
           (CmdReader ps m) => flip CmdReader m <$> f ps
         )
 
@@ -85,7 +85,7 @@ interface HasHelp d where
   help : { f : Type -> Type } -> Functor f => LensLike' f d Doc
 
 HasHelp OptProperties where
-  help (MkArrow f) = MkArrow (\a => case a of
+  help (Mor f) = Mor (\a => case a of
          (MkOptProperties vis hdoc) => MkOptProperties vis <$> f hdoc
        )
 
@@ -96,7 +96,7 @@ interface HasVisibility d where
   visibility : { f : Type -> Type } -> Functor f => LensLike' f d Visibility
 
 HasVisibility OptProperties where
-  visibility (MkArrow f) = MkArrow (\a => case a of
+  visibility (Mor f) = Mor (\a => case a of
          (MkOptProperties vis hdoc) => (\vis' => MkOptProperties vis' hdoc) <$> f vis
         )
 
@@ -113,12 +113,12 @@ interface HasValue ( d : Type -> Type ) where
   value : { a : Type } -> { b : Type } -> { f : Type -> Type } -> Functor f => LensLike f (d a) (d b) a b
 
 HasValue (OptReader FlagParams) where
-  value (MkArrow f) = MkArrow (\a => case a of
+  value (Mor f) = Mor (\a => case a of
          (FlagReader n d) => (\d' => FlagReader n d') <$> f d
         )
 
 HasValue (Option FlagParams) where
-  value (MkArrow f) = MkArrow (\a => case a of
+  value (Mor f) = Mor (\a => case a of
          (Opt props (FlagReader n d)) => (\d' => Opt props $ FlagReader n d') <$> f d
         )
 

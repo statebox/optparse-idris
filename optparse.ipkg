@@ -1,7 +1,5 @@
 package optparse
 
-opts = "-p lens -p wlpprint"
-
 modules = Options.Applicative
         , Options.Applicative.Types
         , Options.Applicative.Run
@@ -9,3 +7,5 @@ modules = Options.Applicative
         , Options.Applicative.Maybe
         , Options.Applicative.Builder
 
+pkgs = lens
+     , wlpprint

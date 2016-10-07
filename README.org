@@ -1,5 +1,0 @@
-#+TITLE: Optparse-Applicative
-#+AUTHOR: Huw Campbell
-#+DATE: [2016-02-22 Mon]
-
-A mostly faithful port of Paolo Cappriotti's optparse-applicative to Idris.
