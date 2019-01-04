@@ -44,18 +44,18 @@ stepParser p arg = case (parseWord arg) of
   Just (ParsedWord w wordVal) => searchParser p $ \opt => case opt of
     Opt _ (FlagReader w' a)    => case elem w w' of
       True  => do
-        args <- lift $ ST (\x => return (x, x))
+        args <- lift $ ST (\x => pure (x, x))
         let poppedArgs  = maybe [] (\w => ("-" <+> w) :: Nil) wordVal <+> args
-        lift $ ST (\y => return ((), poppedArgs))
+        lift $ ST (\y => pure ((), poppedArgs))
         lift . lift . Right . pure $ a
       False => empty
     Opt _ (OptionReader w' fa _) => case elem w w' of
       True  => do
-        args <- lift $ ST (\x => return (x, x))
+        args <- lift $ ST (\x => pure (x, x))
         let argsWord = maybe [] (:: Nil) wordVal <+> args
         case argsWord of
           (a :: rest) => do
-            lift $ ST (\y => return ((), rest))
+            lift $ ST (\y => pure ((), rest))
             lift . lift . map pure $ fa a
           _ => lift $ lift (Left $ ErrorMsg "Input required after option ")
       False => empty

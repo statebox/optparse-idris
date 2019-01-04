@@ -123,7 +123,7 @@ HasValue (Option FlagParams) where
         )
 
 defProps : OptProperties
-defProps = MkOptProperties Visible Empty
+defProps = MkOptProperties Visible empty
 
 option : (String -> Either ParseError a) -> (Option OptionParams a -> Option OptionParams a) -> Parser a
 option rdr f = OptP  (f $ Opt defProps (OptionReader [] rdr "OPT"))
