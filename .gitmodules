@@ -1,6 +1,0 @@
-[submodule "lib/idris-lens"]
-	path = lib/idris-lens
-	url = git@github.com:HuwCampbell/idris-lens.git
-[submodule "lib/wl-pprint"]
-	path = lib/wl-pprint
-	url = https://github.com/shayan-najd/wl-pprint.git

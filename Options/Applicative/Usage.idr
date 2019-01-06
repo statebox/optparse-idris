@@ -31,7 +31,7 @@ renderName (ShortName c) = char '-' |+| char c
 renderName (LongName s)  = string "--" |+| string s
 
 renderNames : List OptName -> Doc
-renderNames (Nil)      = Empty
+renderNames (Nil)      = empty
 renderNames (n :: Nil) = renderName n
 renderNames (n :: ns)  = (foldl (\x => \y => x |++| char '|' |++| renderName y) (renderName n) ns)
 
