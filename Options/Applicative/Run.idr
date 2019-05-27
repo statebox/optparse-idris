@@ -83,8 +83,8 @@ runParser p args@(arg :: argt) = do
     _                => maybeToEither (parseError arg) $ map (\x' => (x', args)) (evalParser p)
 
 runParserFully : Parser a -> List String -> Either ParseError a
-runParserFully p Nil = do
-  (res,leftOver) <- runParser p Nil
+runParserFully p ls = do
+  (res,leftOver) <- runParser p ls
   case leftOver of
     (un :: _) => Left $ parseError un
     Nil       => Right res
