@@ -74,14 +74,15 @@ parseError arg = ErrorMsg msg
       ('-'::_) => "Invalid option `" ++ arg ++ "'"
       _        => "Invalid argument `" ++ arg ++ "'"
 
+total
 runParser : Parser a -> List String -> Either ParseError (a, List String)
 runParser p Nil = maybeToEither (ErrorMsg "Not enough input") $ map (\p' => (p', Nil)) (evalParser p)
 runParser p args@(arg :: argt) = do
-  x <- runStateT (runMaybeT $ stepParser p arg) argt
-  case x of
-    (Just p', args') => runParser p' args'
-    _                => maybeToEither (parseError arg) $ map (\x' => (x', args)) (evalParser p)
+  (Just p', args') <- runStateT (runMaybeT $ stepParser p arg) argt
+    | _ => maybeToEither (parseError arg) (map (\x' => (x', args)) (evalParser p))
+  assert_total $ runParser p' args'
 
+total
 runParserFully : Parser a -> List String -> Either ParseError a
 runParserFully p ls = do
   (res,leftOver) <- runParser p ls
