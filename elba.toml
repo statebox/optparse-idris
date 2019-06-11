@@ -1,0 +1,14 @@
+[package]
+name = "HuwCampbell/optparse-idris"
+version = "0.1.1"
+authors = []
+
+[dependencies]
+"shayan-najd/wl-pprint" = { git = "https://github.com/andrevidela/wl-pprint" }
+"HuwCampbell/idris-lens" = { git = "https://github.com/andrevidela/idris-lens" }
+
+[targets.lib]
+name = "optparse"
+path = "."
+mods = ["Options.Applicative"]
+
