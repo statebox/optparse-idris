@@ -127,7 +127,7 @@ fullDesc = tabulate . catMaybes . flattenTree . treeMapParser doc
       let n = optDesc True False info opt
       let h = opt ^. help
       guard . not . isEmptyChunk $ n
-      return (extractChunk n, h)
+      pure (extractChunk n, h)
 
 -- | Generate the help text for a program.
 parserHelp : Parser a -> Doc
