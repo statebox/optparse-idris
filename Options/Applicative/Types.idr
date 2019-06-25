@@ -3,7 +3,7 @@
 -- Copyright   : (c) Huw Campbell
 -- --------------------------------------------------------------------- [ EOH ]
 module Options.Applicative.Types
-import public Text.PrettyPrint.Leijen
+import public Text.PrettyPrint.WL
 
 import        Control.Monad.Trans
 import        Control.Lens

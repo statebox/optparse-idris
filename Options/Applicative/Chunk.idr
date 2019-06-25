@@ -4,7 +4,7 @@
 -- --------------------------------------------------------------------- [ EOH ]
 module Options.Applicative.Chunk
 
-import public Text.PrettyPrint.Leijen
+import public Text.PrettyPrint.WL
 
 %default total
 %access public export

@@ -4,7 +4,7 @@
 -- --------------------------------------------------------------------- [ EOH ]
 module Options.Applicative
 
-import public Text.PrettyPrint.Leijen
+import public Text.PrettyPrint.WL
 import public Options.Applicative.Builder
 import public Options.Applicative.Maybe
 import public Options.Applicative.Run
