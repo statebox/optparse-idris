@@ -4,7 +4,7 @@
 -- --------------------------------------------------------------------- [ EOH ]
 module Options.Applicative.Builder
 
-import public Text.PrettyPrint.Leijen
+import public Text.PrettyPrint.WL
 import        Options.Applicative.Types
 import        Control.Monad.Trans
 import        Control.Lens

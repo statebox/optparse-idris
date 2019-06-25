@@ -4,7 +4,7 @@
 -- --------------------------------------------------------------------- [ EOH ]
 module Options.Applicative.Usage
 
-import public Text.PrettyPrint.Leijen
+import public Text.PrettyPrint.WL
 
 import Options.Applicative.Builder
 import Options.Applicative.Chunk
@@ -28,7 +28,7 @@ record OptHelpInfo where
 
 renderName : OptName -> Doc
 renderName (ShortName c) = char '-' |+| char c
-renderName (LongName s)  = string "--" |+| string s
+renderName (LongName s)  = text "--" |+| text s
 
 renderNames : List OptName -> Doc
 renderNames (Nil)      = empty
@@ -41,10 +41,10 @@ optDesc withHidden withParens info (Opt pp rdr) =
     where
       mm : Chunk Doc
       mm = MkChunk . Just $ case rdr of
-        (OptionReader ns _ m) => renderNames ns |++| (string m)
+        (OptionReader ns _ m) => renderNames ns |++| (text m)
         (FlagReader ns _)     => renderNames ns
-        (ArgReader _ m)       => string m
-        (CmdReader _ m)       => string m
+        (ArgReader _ m)       => text m
+        (CmdReader _ m)       => text m
 
       reqParens : Bool
       reqParens = case rdr of

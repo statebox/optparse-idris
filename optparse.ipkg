@@ -10,4 +10,4 @@ modules = Options.Applicative
         , Options.Applicative.Usage
 
 pkgs = lens
-     , wlpprint
+     , contrib

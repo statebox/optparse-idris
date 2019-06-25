@@ -10,4 +10,5 @@ authors = []
 name = "optparse"
 path = "."
 mods = ["Options.Applicative"]
+idris_opts = ["-p","contrib"]
 
