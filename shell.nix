@@ -6,7 +6,7 @@ let
     sha256 = "1xy1qgam0i2fyqhaczw0qrx8yv3hgdh9jp47wmln5ljiixr5ic5n";
     }) {};
   stdenv = pkgs.stdenv;
-  idrisWithPkgs = pkgs.idrisPackages.with-packages (with pkgs.idrisPackages; [ lens wl-pprint ]);
+  idrisWithPkgs = pkgs.idrisPackages.with-packages (with pkgs.idrisPackages; [ lens ]);
 in
 with pkgs; stdenv.mkDerivation {
   name = "eternal-shell";
