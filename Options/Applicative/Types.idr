@@ -8,6 +8,7 @@ import public Text.PrettyPrint.WL
 import        Control.Monad.Trans
 import        Data.Profunctor.Lens
 
+%default total
 %access public export
 
 data ParamType = OptionParams
@@ -32,9 +33,9 @@ data OptName : Type where
   LongName  : String -> OptName
 
 Eq OptName where
-  (==) (ShortName a) (ShortName b) = a == b
-  (==) (LongName  a) (LongName  b) = a == b
-  _  == _ = False
+  (ShortName a) == (ShortName b) = a == b
+  (LongName  a) == (LongName  b) = a == b
+  _             == _             = False
 
 data ParseError : Type where
   ErrorMsg : String -> ParseError
