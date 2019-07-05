@@ -10,7 +10,7 @@ import public Options.Applicative.Maybe
 import public Options.Applicative.Run
 import public Options.Applicative.Types
 import public Options.Applicative.Usage
-import public Control.Lens
+import public Data.Profunctor.Lens
 
 %access public export
 

@@ -6,7 +6,7 @@ module Options.Applicative.Types
 import public Text.PrettyPrint.WL
 
 import        Control.Monad.Trans
-import        Control.Lens
+import        Data.Profunctor.Lens
 
 %access public export
 

@@ -11,7 +11,8 @@ import Options.Applicative.Chunk
 import Options.Applicative.Types
 import Options.Applicative.Maybe
 import Options.Applicative.Run
-import Control.Lens
+import Data.Profunctor
+import Data.Profunctor.Lens
 import Control.Monad.State
 import Control.Monad.Trans
 
@@ -36,7 +37,7 @@ renderNames (n :: Nil) = renderName n
 renderNames (n :: ns)  = (foldl (\x => \y => x |++| char '|' |++| renderName y) (renderName n) ns)
 
 optDesc : Bool -> Bool -> OptHelpInfo -> Option g a -> Chunk Doc
-optDesc withHidden withParens info (Opt pp rdr) =
+optDesc withHidden withParens info (Opt pp rdr) = 
   render mm (pp ^. visibility == Visible || withHidden) (hinfoDefault info) (reqParens && withParens)
     where
       mm : Chunk Doc

@@ -9,5 +9,5 @@ modules = Options.Applicative
         , Options.Applicative.Types
         , Options.Applicative.Usage
 
-pkgs = lens
+pkgs = profunctors
      , contrib
