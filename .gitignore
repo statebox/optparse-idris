@@ -30,3 +30,5 @@ tutorial/*.fls
 tags
 TAGS
 src/Version_idris.hs
+target/
+elba.lock

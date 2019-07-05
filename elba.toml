@@ -1,10 +1,10 @@
 [package]
 name = "HuwCampbell/optparse-idris"
-version = "0.1.1"
+version = "0.1.2"
 authors = []
 
 [dependencies]
-"HuwCampbell/idris-lens" = { git = "https://github.com/andrevidela/idris-lens" }
+"japesinator/Idris-Profunctors" = { git = "https://github.com/clayrat/Idris-Profunctors/" }
 
 [targets.lib]
 name = "optparse"
