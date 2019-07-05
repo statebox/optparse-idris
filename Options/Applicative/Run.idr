@@ -9,10 +9,13 @@ import Options.Applicative.Maybe
 import Control.Monad.State
 import Control.Monad.Trans
 
+%default total
 %access public export
 
-data OptWord : Type where
-  ParsedWord :  OptName -> Maybe String -> OptWord
+record OptWord where
+  constructor ParsedWord
+  name : OptName 
+  wordVal : Maybe String
 
 parseWord : String -> Maybe OptWord
 parseWord s = case unpack s of
@@ -23,18 +26,19 @@ parseWord s = case unpack s of
   ('-' :: w :: rs)  => Just $ ParsedWord (ShortName w) $ Just (pack rs)
   _                 => Nothing
 
-searchParser : {a : Type} -> Parser a -> ({g : ParamType} -> {r : Type} -> Option g r -> MaybeT (StateT (List String) (Either ParseError)) (Parser r)) -> MaybeT (StateT (List String) (Either ParseError)) (Parser a)
-searchParser (NilP x) _ = empty
-searchParser (OptP o) f = f o
-searchParser (AppP p1 p2) f = (<|>)
-  ( (\p1' => p1' <*> p2) <$> searchParser p1 f )
-  ( (\p2' => p1 <*> p2') <$> searchParser p2 f )
-searchParser (AltP p1 p2) f = (<|>)
-  ( searchParser p1 f )
-  ( searchParser p2 f )
+searchParser : {a : Type} -> Parser a 
+           -> ({g : ParamType} -> {r : Type} -> Option g r -> MaybeT (StateT (List String) (Either ParseError)) (Parser r)) 
+           -> MaybeT (StateT (List String) (Either ParseError)) (Parser a)
+searchParser (NilP x)     _ = empty
+searchParser (OptP o)     f = f o
+searchParser (AppP p1 p2) f = 
+  ((\p1' => p1' <*> p2) <$> searchParser p1 f)
+  <|>
+  ((\p2' => p1 <*> p2') <$> searchParser p2 f)
+searchParser (AltP p1 p2) f = searchParser p1 f <|> searchParser p2 f
 
 stepParser : {a : Type} -> Parser a -> String -> MaybeT (StateT (List String) (Either ParseError)) (Parser a)
-stepParser p arg = case (parseWord arg) of
+stepParser p arg = case parseWord arg of
   Nothing => searchParser p $ \opt => case opt of
     Opt _ (ArgReader fa _) => lift $ lift $ map pure (fa arg)
     Opt _ (CmdReader ps _) => case lookup arg ps of
@@ -44,35 +48,33 @@ stepParser p arg = case (parseWord arg) of
   Just (ParsedWord w wordVal) => searchParser p $ \opt => case opt of
     Opt _ (FlagReader w' a)    => case elem w w' of
       True  => do
-        args <- lift $ ST (\x => pure (x, x))
+        args <- lift $ ST $ \x => pure (x, x)
         let poppedArgs  = maybe [] (\w => ("-" <+> w) :: Nil) wordVal <+> args
         lift $ ST (\y => pure ((), poppedArgs))
         lift . lift . Right . pure $ a
       False => empty
     Opt _ (OptionReader w' fa _) => case elem w w' of
       True  => do
-        args <- lift $ ST (\x => pure (x, x))
+        args <- lift $ ST $ \x => pure (x, x)
         let argsWord = maybe [] (:: Nil) wordVal <+> args
         case argsWord of
           (a :: rest) => do
-            lift $ ST (\y => pure ((), rest))
+            lift $ ST $ \y => pure ((), rest)
             lift . lift . map pure $ fa a
           _ => lift $ lift (Left $ ErrorMsg "Input required after option ")
       False => empty
     _ => empty
 
 evalParser : Parser a -> Maybe a
-evalParser (NilP r) = r
-evalParser (OptP _) = Nothing
+evalParser (NilP r)     = r
+evalParser (OptP _)     = Nothing
 evalParser (AppP p1 p2) = evalParser p1 <*> evalParser p2
 evalParser (AltP p1 p2) = evalParser p1 <|> evalParser p2
 
 parseError : String -> ParseError
-parseError arg = ErrorMsg msg
-  where
-    msg = case unpack arg of
-      ('-'::_) => "Invalid option `" ++ arg ++ "'"
-      _        => "Invalid argument `" ++ arg ++ "'"
+parseError arg = ErrorMsg $ case unpack arg of
+  ('-'::_) => "Invalid option `" ++ arg ++ "'"
+  _        => "Invalid argument `" ++ arg ++ "'"
 
 total
 runParser : Parser a -> List String -> Either ParseError (a, List String)
