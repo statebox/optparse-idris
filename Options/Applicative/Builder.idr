@@ -12,35 +12,35 @@ import        Data.Profunctor.Lens
 
 %access public export
 
-optRdr : Lens' {p=Morphism} (Option x a) (OptReader x a)
-optRdr (Mor f) = Mor $ \(Opt props rdr) => Opt props $ f rdr
-
-optProps : Lens' {p=Morphism} (Option x a) (OptProperties)
-optProps (Mor f) = Mor $ \(Opt props rdr) => Opt (f props) rdr
+optRdr : Lensing p => Lens' {p} (Option x a) (OptReader x a)
+optRdr = lens' $ \(Opt props rdr) => (Opt props, rdr)
+  
+optProps : Lensing p => Lens' {p} (Option x a) OptProperties
+optProps = lens' $ \(Opt props rdr) => (flip Opt rdr, props)
 
 interface HasMeta d where
-  meta : Lens' {p=Morphism} d String
+  meta : Lensing p => Lens' {p} d String
 
 HasMeta (OptReader OptionParams a) where
-  meta (Mor f) = Mor $ \(OptionReader n p m) => OptionReader n p $ f m
-
+  meta = lens' $ \(OptionReader n p m) => (OptionReader n p, m)
+  
 HasMeta (OptReader ArgParams a) where
-  meta (Mor f) = Mor $ \(ArgReader p m) => ArgReader p $ f m
+  meta = lens' $ \(ArgReader p m) => (ArgReader p, m)
 
 HasMeta (OptReader CmdParams a) where
-  meta (Mor f) = Mor $ \(CmdReader ps m) => CmdReader ps $ f m
+  meta = lens' $ \(CmdReader ps m) => (CmdReader ps, m)
 
 HasMeta (OptReader x a) => HasMeta (Option x a) where
   meta = optRdr . meta
 
 interface HasName d where
-  names : Lens' {p=Morphism} d (List OptName)
+  names : Lensing p => Lens' {p} d (List OptName)
 
 HasName (OptReader OptionParams a) where
-  names (Mor f) = Mor $ \(OptionReader n p m) => OptionReader (f n) p m
-        
+  names = lens' $ \(OptionReader n p m) => (\n' => OptionReader n' p m, n)
+
 HasName (OptReader FlagParams a) where
-  names (Mor f) = Mor $ \(FlagReader n d) => FlagReader (f n) d
+  names = lens' $ \(FlagReader n d) => (flip FlagReader d, n)
 
 HasName (OptReader x a) => HasName (Option x a) where
   names = optRdr . names
@@ -52,10 +52,10 @@ long : HasName d => String -> d -> d
 long c = over names (\ns => LongName c :: ns)
 
 interface HasSubCommands d a where
-  cmds : Lens' {p=Morphism} d (List (String, (Parser a)))
+  cmds : Lensing p => Lens' {p} d (List (String, (Parser a)))
 
 HasSubCommands (OptReader CmdParams a) a where
-  cmds (Mor f) = Mor $ \(CmdReader ps m) => CmdReader (f ps) m 
+  cmds = lens' $ \(CmdReader ps m) => (flip CmdReader m, ps) 
 
 HasSubCommands (Option CmdParams a) a where
   cmds = optRdr . cmds
@@ -64,19 +64,19 @@ cmd : HasSubCommands d a => String -> Parser a -> d -> d
 cmd n p = over cmds (\ns => (n,p) :: ns)
 
 interface HasHelp d where
-  help : Lens' {p=Morphism} d Doc
+  help : Lensing p => Lens' {p} d Doc
 
 HasHelp OptProperties where
-  help (Mor f) = Mor $ \(MkOptProperties vis hdoc) => MkOptProperties vis $ f hdoc
+  help = lens' $ \(MkOptProperties vis hdoc) => (MkOptProperties vis, hdoc)
 
 HasHelp (Option x a) where
   help = optProps . help
 
 interface HasVisibility d where
-  visibility : Lens' {p=Morphism} d Visibility
+  visibility : Lensing p => Lens' {p} d Visibility
 
 HasVisibility OptProperties where
-  visibility (Mor f) = Mor $ \(MkOptProperties vis hdoc) => MkOptProperties (f vis) hdoc
+  visibility = lens' $ \(MkOptProperties vis hdoc) => (flip MkOptProperties hdoc, vis)
 
 HasVisibility (Option x a) where
   visibility = optProps . visibility
@@ -88,13 +88,13 @@ internal : HasVisibility d => d -> d
 internal = visibility .~ Internal
 
 interface HasValue (d : Type -> Type) where
-  value : Lens {p=Morphism} (d a) (d b) a b
+  value : Lensing p => Lens {p} (d a) (d b) a b
 
 HasValue (OptReader FlagParams) where
-  value (Mor f) = Mor $ \(FlagReader n d) => FlagReader n $ f d
+  value = lens' $ \(FlagReader n d) => (FlagReader n, d)
 
 HasValue (Option FlagParams) where
-  value (Mor f) = Mor $ \(Opt props (FlagReader n d)) => Opt props $ FlagReader n $ f d
+  value = lens' $ \(Opt props (FlagReader n d)) => (Opt props . FlagReader n, d)
 
 defProps : OptProperties
 defProps = MkOptProperties Visible empty
