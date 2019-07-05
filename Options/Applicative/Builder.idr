@@ -14,7 +14,7 @@ import        Data.Profunctor.Lens
 
 optRdr : Lensing p => Lens' {p} (Option x a) (OptReader x a)
 optRdr = lens' $ \(Opt props rdr) => (Opt props, rdr)
-  
+
 optProps : Lensing p => Lens' {p} (Option x a) OptProperties
 optProps = lens' $ \(Opt props rdr) => (flip Opt rdr, props)
 
@@ -23,7 +23,7 @@ interface HasMeta d where
 
 HasMeta (OptReader OptionParams a) where
   meta = lens' $ \(OptionReader n p m) => (OptionReader n p, m)
-  
+
 HasMeta (OptReader ArgParams a) where
   meta = lens' $ \(ArgReader p m) => (ArgReader p, m)
 
@@ -55,7 +55,7 @@ interface HasSubCommands d a where
   cmds : Lensing p => Lens' {p} d (List (String, (Parser a)))
 
 HasSubCommands (OptReader CmdParams a) a where
-  cmds = lens' $ \(CmdReader ps m) => (flip CmdReader m, ps) 
+  cmds = lens' $ \(CmdReader ps m) => (flip CmdReader m, ps)
 
 HasSubCommands (Option CmdParams a) a where
   cmds = optRdr . cmds

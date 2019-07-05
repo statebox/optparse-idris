@@ -38,7 +38,7 @@ renderNames [n]       = renderName n
 renderNames (n :: ns) = (foldl (\x, y => x |++| char '|' |++| renderName y) (renderName n) ns)
 
 optDesc : Bool -> Bool -> OptHelpInfo -> Option g a -> Chunk Doc
-optDesc withHidden withParens info (Opt pp rdr) = 
+optDesc withHidden withParens info (Opt pp rdr) =
   render mm (pp ^. visibility == Visible || withHidden) (hinfoDefault info) (reqParens && withParens)
     where
       mm : Chunk Doc
