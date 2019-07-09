@@ -41,7 +41,7 @@ optDesc withHidden withParens info (Opt pp rdr) =
   render mm (pp ^. visibility == Visible || withHidden) (hinfoDefault info) (reqParens && withParens)
     where
       mm : Chunk Doc
-      mm = MkChunk . Just $ case rdr of
+      mm = Just $ case rdr of
         (OptionReader ns _ m) => renderNames ns |++| (text m)
         (FlagReader ns _)     => renderNames ns
         (ArgReader _ m)       => text m
@@ -57,7 +57,7 @@ optDesc withHidden withParens info (Opt pp rdr) =
         (CmdReader _ _)              => False
 
       render : Chunk Doc -> Bool -> Bool -> Bool -> Chunk Doc
-      render _      False  _    _    = MkChunk Nothing
+      render _      False  _    _    = Nothing
       render chunk  _      True _    = map brackets chunk
       render chunk  _      _    True = map parens   chunk
       render chunk  _      _    _    = chunk
@@ -65,7 +65,7 @@ optDesc withHidden withParens info (Opt pp rdr) =
 partial
 fold_tree : OptTree (Chunk Doc) -> Chunk Doc
 fold_tree (Leaf x) = x
-fold_tree (MultNode xs) = foldr ((<+>) . fold_tree) (MkChunk Nothing) xs
+fold_tree (MultNode xs) = foldr (combine . fold_tree) Nothing xs
 fold_tree (AltNode xs) = alt_node
                        . filter nonEmptyChunk
                        . map fold_tree $ xs

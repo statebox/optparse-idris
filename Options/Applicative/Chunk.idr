@@ -9,37 +9,26 @@ import public Text.PrettyPrint.WL
 %default total
 %access public export
 
-record Chunk a where
-  constructor MkChunk 
-  unChunk : Maybe a
+Chunk : Type -> Type
+Chunk = Maybe
 
 nonEmptyChunk : Chunk a -> Bool
-nonEmptyChunk = isJust . unChunk
-
-Functor Chunk where
-  map f (MkChunk x) = MkChunk $ map f x
-
-Applicative Chunk where
-  pure = MkChunk . pure
-  (MkChunk f) <*> (MkChunk x) = MkChunk $ f <*> x
-
-Monad Chunk where
-  (MkChunk m) >>= f = MkChunk $ m >>= unChunk . f
+nonEmptyChunk = isJust
 
 chunked : (a -> a -> a)
         -> Chunk a -> Chunk a -> Chunk a
-chunked _ (MkChunk Nothing)  y                  = y
-chunked _ x                  (MkChunk Nothing)  = x
-chunked f (MkChunk (Just x)) (MkChunk (Just y)) = MkChunk $ Just $ f x y
+chunked _ Nothing  y        = y
+chunked _ x        Nothing  = x
+chunked f (Just x) (Just y) = Just $ f x y
 
 extractChunk : Monoid a => Chunk a -> a
-extractChunk (MkChunk x) = fromMaybe neutral x
+extractChunk = fromMaybe neutral
 
-(<+>) : Chunk Doc -> Chunk Doc -> Chunk Doc
-(<+>) = chunked (|++|)
+combine : Chunk Doc -> Chunk Doc -> Chunk Doc
+combine = chunked (|++|)
 
 tabulate' : Int -> List (Doc, Doc) -> Chunk Doc
-tabulate' _    []    = MkChunk Nothing
+tabulate' _    []    = Nothing
 tabulate' size table = pure $ vcat
   [ indent 2 (fillBreak size key |+| value)
   | (key, value) <- table ]
