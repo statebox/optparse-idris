@@ -7,7 +7,6 @@ authors = []
 "HuwCampbell/idris-lens" = { git = "https://github.com/andrevidela/idris-lens" }
 
 [targets.lib]
-name = "optparse"
 path = "."
 mods = ["Options.Applicative"]
 idris_opts = ["-p","contrib"]
